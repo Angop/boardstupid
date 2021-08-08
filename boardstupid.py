@@ -218,25 +218,26 @@ class Node:
         its corresponding UCB as a tuple
         """
         # If its a leaf, return None? TODO
-        children = []
-        doneMoves = [x.state for x in self.expandedChildren]#moves already taken
+        children = [] # TODO CHANGE TO SET
+        doneStates = set()
         for child in self.expandedChildren:
             # copy expanded children, and get their UCB's
             children.append((child, child.getUcb(self.childrenAttempts, bias)))
+            doneStates.add(child.state)
 
-        # TODO: speedup -> if len children ==  len moves just return
+        # speedup -> if len children ==  len moves just return
         moves = self.state.moves
-        if len(children) == len(moves):
+        if len(doneStates) == len(moves):
             return children
 
         for move in moves:
             # for each possible move, generate a new child if that direction was
             #   not already expanded
             state = self.state.traverse(move)
-            if state not in doneMoves:
+            if state not in doneStates:
                 node = Node(state)
-                children.append(
-                    (node, node.getUcb(self.childrenAttempts, bias)))
+                children.append((node,
+                    node.getUcb(self.childrenAttempts, bias)))
         return children
 
     def getChildrenWN(self) -> "list[Tuple[Node, float]]":
@@ -244,11 +245,12 @@ class Node:
         Returns all the expanded children of this node and each
         corresponding win/attempt ratio as a tuple
         """
-        children = []
-        for child in self.expandedChildren:
-            # copy expanded children, and get their W/N's
-            children.append((child, child.getWinAttemptRatio()))
-        return children   
+        # children = []
+        # for child in self.expandedChildren:
+        #     # copy expanded children, and get their W/N's
+        #     children.append((child, child.getWinAttemptRatio()))
+        # return children
+        return [(x, x.getWinAttemptRatio()) for x in self.expandedChildren]
 
     def getChildren(self) -> "list[Node]":
         """
@@ -315,7 +317,9 @@ class Node:
         return self.state.display
     
     def metaInfo(self) -> str:
-        return "wins: " + str(self.wins) +  " attempts: " + str(self.attempts)\
+        return "move " + str(self.state.selected)\
+            + " wins: " + str(self.wins)\
+            + " attempts: " + str(self.attempts)\
             + " ratio: " + str(self.getWinAttemptRatio())
 
 
@@ -388,7 +392,7 @@ class MonteCarlo:
         if node.state.player == util * -1:
             node.wins += 1
         elif util == 0:
-            node.wins += 0.5
+            node.wins += 0.25
 
         i = len(affected) - 2
         while i >= 0:
@@ -401,7 +405,7 @@ class MonteCarlo:
                 node.wins += 1
             elif util == 0:
                 # weight tie as half a win
-                node.wins += 0.5
+                node.wins += 0.25
             i -= 1
 
 
@@ -423,10 +427,14 @@ def find_best_move(state: GameState) -> None:
     reached, the index stored in selected will be used for the player's turn.
     """
     mc = MonteCarlo(state)
+    count = 0
     while True:
-    # for _ in range(100):
+    # for x in range(1000):
         mc.monteCarloSearch()
-        mc.setSelectedMove()
+        if count % 10 == 0:
+            mc.setSelectedMove()
+        count += 1
+    # print([x.metaInfo() for x in mc.root.getChildren()])
 
 def maxRand(opts: List[Tuple[Node, float]]) -> Node:
     """
@@ -443,21 +451,12 @@ def maxRand(opts: List[Tuple[Node, float]]) -> Node:
 
 
 def main() -> None:
-    board = ((0, 0, 0, 0,
-        0, 0, None, None,
-        0, None, 0, None,
-        0, None, None, 0),) \
-        + ((None,) * 16,) * 3
-    state = GameState(board, 1)
-    print(state.display)
-    find_best_move(state)
-    assert state.selected == 0
-#    play_game()
+    pass
 
 
 
 
-def play_game() -> None:
+def play_game(board: Tuple[Tuple[int, ...]]) -> None:
     """
     Play a game of 3D Tic-Tac-Toe with the computer.
 
@@ -465,8 +464,8 @@ def play_game() -> None:
     If you win, your implementation was bad.
     You lose either way.
     """
-    board = tuple(tuple(0 for _ in range(i, i + 16))
-                  for i in range(0, 64, 16))
+    # board = tuple(tuple(0 for _ in range(i, i + 16))
+    #               for i in range(0, 64, 16))
     state = GameState(board, 1)
     while state.util is None:
         # human move
