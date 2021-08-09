@@ -5,23 +5,23 @@ from boardstupid import *
 
 class TestBoardStupid(unittest.TestCase):
 
-    # def test_play_game(self):
-    #     board = (
-    #         tuple(0 for i in range(16)),
-    #         (0,None,None,0,
-    #         None,None,None,None,
-    #         None,None,None,None,
-    #         0,None,None,0),
-    #         (0,None,None,0,
-    #         None,None,None,None,
-    #         None,None,None,None,
-    #         0,None,None,0),
-    #         (0,None,None,0,
-    #         None,None,None,None,
-    #         None,None,None,None,
-    #         0,None,None,0),
-    #     )
-    #     play_game(board)
+    def test_play_game(self):
+        board = (
+            tuple(0 for i in range(16)),
+            (0,None,None,0,
+            None,None,None,None,
+            None,None,None,None,
+            0,None,None,0),
+            (0,None,None,0,
+            None,None,None,None,
+            None,None,None,None,
+            0,None,None,0),
+            (0,None,None,0,
+            None,None,None,None,
+            None,None,None,None,
+            0,None,None,0),
+        )
+        play_game(board)
 
     def test_basic_understanding(self):
         board = ((   0,    0,    0,    0,
@@ -199,7 +199,7 @@ class TestBoardStupid(unittest.TestCase):
         path = [mc.root]
         # only works until I make expansion random on equal max ucb
         node = mc.selectExpand(mc.root, path)
-        util = mc.simulate(node)
+        util = mc.simulate(node, 0)
         self.assertTrue(util in [0,1,-1])
 
     def test_backprop(self):
@@ -214,7 +214,7 @@ class TestBoardStupid(unittest.TestCase):
         path = [mc.root]
         # only works until I make expansion random on equal max ucb
         node = mc.selectExpand(mc.root, path)
-        util = mc.simulate(node)
+        util = mc.simulate(node, 0)
         mc.backprop(path, util)
         # print(util)
         # print([x.state.player for x in path])
@@ -239,13 +239,14 @@ class TestBoardStupid(unittest.TestCase):
             self.assertEqual(path[2].attempts, 1)
             self.assertEqual(path[2].childrenAttempts, 0)
         elif util == 0:
-            self.assertEqual(path[0].wins, 0.25)
+            tie = .4
+            self.assertEqual(path[0].wins, tie)
             self.assertEqual(path[0].attempts, 1)
             self.assertEqual(path[0].childrenAttempts, 1)
-            self.assertEqual(path[1].wins, 0.25)
+            self.assertEqual(path[1].wins, tie)
             self.assertEqual(path[1].attempts, 1)
             self.assertEqual(path[1].childrenAttempts, 1)
-            self.assertEqual(path[2].wins, 0.25)
+            self.assertEqual(path[2].wins, tie)
             self.assertEqual(path[2].attempts, 1)
             self.assertEqual(path[2].childrenAttempts, 0)
         else:
@@ -386,20 +387,20 @@ class TestBoardStupid(unittest.TestCase):
         state = state.traverse(2)
         state = state.traverse(7)
         mc = MonteCarlo(state)
-        print("STATE: ", state.display)
+        # print("STATE: ", state.display)
 
         count = 0
         for _ in range(10000):
             mc.monteCarloSearch()
             count += 1
-        print("count: ",count)
+        # print("count: ",count)
         mc.setSelectedMove()
 
         winner = [x for x in mc.root.expandedChildren if x.state.selected == 3][0]
-        print(winner)
-        print(winner.metaInfo())
+        # print(winner)
+        # print(winner.metaInfo())
 
-        print([(x[0].state.selected, x[1]) for x in mc.root.getChildrenWN()])
+        # print([(x[0].state.selected, x[1]) for x in mc.root.getChildrenWN()])
         self.assertEqual(state.selected, mc.root.state.selected)
         self.assertEqual(state.selected, 3)
 
@@ -410,10 +411,39 @@ class TestBoardStupid(unittest.TestCase):
             0, None, None, 0),) \
             + ((None,) * 16,) * 3
         state = GameState(board, 1)
-        print(state.display)
+        # print(state.display)
         find_best_move(state)
         self.assertEqual(state.selected, 0)
-        
+ 
+    def test_depth_check(self):
+        board = ((   0,    0,    0,    0,
+                     0,    0,    0,    0,
+                  None, None, None, None,
+                  None, None, None, None),) \
+                + ((None,) * 16,) * 3
+        state = GameState(board, 1)
+        state = state.traverse(0)
+        state = state.traverse(5)
+        state = state.traverse(1)
+        state = state.traverse(6)
+        state = state.traverse(2)
+        state = state.traverse(4)
+        mc = MonteCarlo(state)
+
+        newNode = Node(state.traverse(3).traverse(7))
+        mc.root.expandedChildren[0].expandChild(newNode)
+        path = [mc.root, mc.root.expandedChildren[0], newNode]
+        # print(path, newNode)
+
+        util = mc.simulate(newNode, 0)
+        self.assertEqual(abs(util), 2)
+
+        mc.backprop(path, util)
+        mc.setSelectedMove()
+        self.assertEqual(state.selected, mc.root.state.selected)
+        self.assertEqual(state.selected, 3)
+
+
 
         
 

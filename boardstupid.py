@@ -349,7 +349,7 @@ class MonteCarlo:
         path = [self.root]
         newNode = self.selectExpand(self.root, path)
         # print("path: ", path) #dd
-        util = self.simulate(newNode)
+        util = self.simulate(newNode, 0)
         self.backprop(path, util)
 
     def selectExpand(self, node: Node, path: "list[Node]") -> Node:
@@ -369,17 +369,20 @@ class MonteCarlo:
         path.append(best)
         return self.selectExpand(best, path)
 
-    def simulate(self, node: Node) -> bool:
+    def simulate(self, node: Node, depth: int) -> bool:
         """
         Simulates a random route to a terminating state and returns the win or
         loss with a true for win and false for loss
         """
         if node.state.util is not None:
-            # print(node) #dd
-            return node.state.util
+            util = node.state.util
+            if util != 0.5 and depth == 0:
+                # if depth is 0, win is directly reachable from this state!
+                return node.state.util * 2
+            return util
         kids = node.getChildren()
         child = random.choice(kids)
-        return self.simulate(child)
+        return self.simulate(child, depth + 1)
 
     def backprop(self, affected: "list[Node]", util: int) -> None:
         """
@@ -389,10 +392,11 @@ class MonteCarlo:
         # handle special case of last node (no childrenAttempts increment)
         node = affected[-1]
         node.attempts += 1
-        if node.state.player == util * -1:
-            node.wins += 1
+        if node.state.player == util * -1 or\
+            node.state.player * -2 == util:
+            node.wins += abs(util)
         elif util == 0:
-            node.wins += 0.25
+            node.wins += 0.4
 
         i = len(affected) - 2
         while i >= 0:
@@ -400,12 +404,13 @@ class MonteCarlo:
             node = affected[i]
             node.attempts += 1
             node.childrenAttempts += 1
-            if node.state.player == util * -1:
+            if node.state.player == util * -1 or\
+                node.state.player * -2 == util:
                 # if player represented on this level won, increment wins
-                node.wins += 1
+                node.wins += abs(util)
             elif util == 0:
                 # weight tie as half a win
-                node.wins += 0.25
+                node.wins += 0.4
             i -= 1
 
 
@@ -429,12 +434,14 @@ def find_best_move(state: GameState) -> None:
     mc = MonteCarlo(state)
     count = 0
     while True:
-    # for x in range(1000):
+    # for x in range(700):
         mc.monteCarloSearch()
         if count % 10 == 0:
             mc.setSelectedMove()
         count += 1
-    # print([x.metaInfo() for x in mc.root.getChildren()])
+    # moveinfo = [x.metaInfo() + "\n" for x in mc.root.getChildren()]
+    # for x in moveinfo:
+    #     print(x)
 
 def maxRand(opts: List[Tuple[Node, float]]) -> Node:
     """
