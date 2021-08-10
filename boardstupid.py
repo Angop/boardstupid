@@ -433,15 +433,15 @@ def find_best_move(state: GameState) -> None:
     """
     mc = MonteCarlo(state)
     count = 0
-    while True:
-    # for x in range(700):
+    # while True:
+    for x in range(700):
         mc.monteCarloSearch()
         if count % 10 == 0:
             mc.setSelectedMove()
         count += 1
-    # moveinfo = [x.metaInfo() + "\n" for x in mc.root.getChildren()]
-    # for x in moveinfo:
-    #     print(x)
+    moveinfo = [x.metaInfo() + "\n" for x in mc.root.getChildren()]
+    for x in moveinfo:
+        print(x)
 
 def maxRand(opts: List[Tuple[Node, float]]) -> Node:
     """

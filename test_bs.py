@@ -5,7 +5,7 @@ from boardstupid import *
 
 class TestBoardStupid(unittest.TestCase):
 
-    def test_play_game(self):
+    def test_play_game_easy(self):
         board = (
             tuple(0 for i in range(16)),
             (0,None,None,0,
@@ -20,6 +20,15 @@ class TestBoardStupid(unittest.TestCase):
             None,None,None,None,
             None,None,None,None,
             0,None,None,0),
+        )
+        play_game(board)
+
+    def test_play_game_hard(self):
+        board = (
+            tuple(0 for i in range(16)),
+            tuple(0 for i in range(16)),
+            tuple(0 for i in range(16)),
+            tuple(0 for i in range(16)),
         )
         play_game(board)
 
@@ -351,12 +360,7 @@ class TestBoardStupid(unittest.TestCase):
                   None, None, None, None),) \
                 + ((None,) * 16,) * 3
         state = GameState(board, 1)
-        state = state.traverse(0)
-        state = state.traverse(5)
-        state = state.traverse(1)
-        state = state.traverse(6)
-        state = state.traverse(2)
-        state = state.traverse(4)
+        state = state.traverse(0).traverse(5).traverse(1).traverse(6).traverse(2).traverse(4)
         mc = MonteCarlo(state)
         # print("STATE: ", state.display)
 
@@ -379,15 +383,9 @@ class TestBoardStupid(unittest.TestCase):
                      0,    0,    0, None,
                   None, None, None, None),) \
                 + ((None,) * 16,) * 3
-        state = GameState(board, 1)
-        state = state.traverse(0)
-        state = state.traverse(5)
-        state = state.traverse(1)
-        state = state.traverse(6)
-        state = state.traverse(2)
-        state = state.traverse(7)
+        state = GameState(board, 1).traverse(0).traverse(5).traverse(1).traverse(6).traverse(2).traverse(7)
         mc = MonteCarlo(state)
-        # print("STATE: ", state.display)
+        print("STATE: ", state.display)
 
         count = 0
         for _ in range(10000):
